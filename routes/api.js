@@ -37,7 +37,8 @@ router.post('/recipes', (req, res) => {
     likes, 
     vegetarian, 
     vegan, 
-    glutenfree 
+    glutenfree,
+    categories
   } = req.body;
   
   if (!name) {res.status(400).json({ error: 'name field is required' });}
@@ -52,10 +53,22 @@ router.post('/recipes', (req, res) => {
     likes: likes || 0, 
     vegetarian: vegetarian || false, 
     vegan: vegan || false, 
-    glutenfree: glutenfree || false
+    glutenfree: glutenfree || false,
+  }, {
+    include: [db.Categories]
   })
     .then(recipe => {
-      res.status(201).json(recipe)
+      return recipe.addCategories(categories)
+        .then(categories => {
+          res.status(201).json(recipe)
+        })
+    })
+    .catch(e => {
+      if (e.name === 'SequelizeForeignKeyConstraintError') {
+        res.json({error: 'could not find all categories'})
+      } else {
+        res.json({error: 'server error'})
+      }
     })
 })
 
